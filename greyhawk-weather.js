@@ -40,6 +40,7 @@ var GlobalWeatherConfig = {
 	windSpeed: 0,
 	windSpeedAdjustment: 0,
 	windDirection: 2,
+	prevailingWindDirection: 10,
 	humidity: 0,  // Add humidity here
     humidityRealistic: 0,
     humidityEffects: "",
@@ -1810,6 +1811,38 @@ function setWindDirection() {
     GlobalWeatherConfig.windDirection = direction[index];
 
     console.log(`Wind direction: ${GlobalWeatherConfig.windDirection}`);
+}
+
+function setPrevailingWindDirection(season) {
+    const windChart = {
+        "Fall": [1, 2, 3, 5, 10, 17, 19, 20], // Ending range for each direction
+        "Winter": [1, 2, 3, 6, 15, 18, 19, 20],
+        "Spring": [2, 3, 4, 5, 7, 10, 17, 20],
+        "Summer": [2, 3, 4, 5, 7, 10, 17, 20]
+    };
+    
+    const directions = ["South", "Southwest", "West", "Northwest", "North", "Northeast", "East", "Southeast"];
+    
+    // Default to current season if not provided or if the provided season isn't valid
+    if (!windChart[season]) {
+        console.error(`Season '${season}' is not valid. Falling back to 'Fall'.`);
+        season = "Fall";
+    }
+    
+    // Roll a d20 to determine the wind direction based on the season
+    const roll = Math.floor(Math.random() * 20) + 1; // 1 to 20
+    console.log(`Rolled a ${roll} for prevailing wind direction in ${season}.`);
+    
+    // Determine the wind direction based on the roll
+    let directionIndex = windChart[season].findIndex(rangeEnd => roll <= rangeEnd);
+    if (directionIndex === -1) { // In case no match is found, default to the last direction
+        directionIndex = directions.length - 1;
+    }
+    
+    const prevailingDirection = directions[directionIndex];
+    GlobalWeatherConfig.prevailingWindDirection = prevailingDirection;
+    
+    console.log(`Prevailing wind direction for ${season}: ${prevailingDirection}`);
 }
 
 function calculateLatitude(type, value) {
