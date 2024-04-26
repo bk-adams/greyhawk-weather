@@ -1000,7 +1000,7 @@ function evalDice(diceExpression, returnMax = false) {
     }
 
     // Attempt to parse fractional dice rolls first, e.g., "1/2d6"
-    const fractionRegex = /(\\d+)\\/(\\d+)d(\\d+)/i;
+    const fractionRegex = /(\d+)\/(\d+)d(\d+)/i;
     const fractionParts = diceExpression.match(fractionRegex);
     if (fractionParts) {
         const numerator = parseInt(fractionParts[1], 10);
@@ -1528,10 +1528,7 @@ async function displayWeatherConditions(onlyConsole = false) {
         <strong>Notes:</strong> ${standardNotes}${specialNotes ? `<br><strong>Special Notes:</strong> ${specialNotes}` : ""}
     `;
 
-    console.log(message.replace(/<br>/g, "
-").replace(/<strong>|<\\/strong>/g, "").replace(/\\s+
-/g, "
-"));
+    console.log(message.replace(/<br>/g, "\n").replace(/<strong>|<\/strong>/g, "").replace(/\s+\n/g, "\n"));
     if (!onlyConsole && typeof ChatMessage === "function") {
         ChatMessage.create({ content: message, speaker: ChatMessage.getSpeaker({ alias: "Weather System" }) });
     } else {
@@ -2191,9 +2188,9 @@ async function addWeatherReportToSimpleCalendar() {
 
     // Create a summary of the weather conditions
     const weatherSummary = `
-        Month: ${currentMonth}, Terrain: ${GlobalWeatherConfig.terrain}, Altitude: ${GlobalWeatherConfig.altitude} ft., Latitude: ${GlobalWeatherConfig.latitude}N\u{B0}<br>
+        Month: ${currentMonth}, Terrain: ${GlobalWeatherConfig.terrain}, Altitude: ${GlobalWeatherConfig.altitude} ft., Latitude: ${GlobalWeatherConfig.latitude}N°<br>
         Sunrise: ${GlobalWeatherConfig.adjustedSunrise}, Sunset: ${GlobalWeatherConfig.adjustedSunset}<br>
-        High: ${GlobalWeatherConfig.dailyHighTemp}\u{B0}F, Low: ${GlobalWeatherConfig.dailyLowTemp}\u{B0}F, Wind Chill: ${GlobalWeatherConfig.temperature.effective}\u{B0}F<br>
+        High: ${GlobalWeatherConfig.dailyHighTemp}°F, Low: ${GlobalWeatherConfig.dailyLowTemp}°F, Wind Chill: ${GlobalWeatherConfig.temperature.effective}°F<br>
         Sky Condition: ${GlobalWeatherConfig.skyCondition}; ${windLabel} (${GlobalWeatherConfig.windSpeed} mph from ${GlobalWeatherConfig.windDirection})<br>
         Precipitation: ${GlobalWeatherConfig.precipType || "None"} for ${GlobalWeatherConfig.initialWeatherEventDuration}, Amount: ${GlobalWeatherConfig.precipAmount || "0"}<br> 
         Wind Notes: ${highWindNotes}<br> 
@@ -2228,14 +2225,8 @@ async function addWeatherReportToSimpleCalendar() {
     };
 
     // Create note content incorporating weather details and notes
-    //const noteContent = `Weather Report for ${noteDate}:
-${weatherSummary}
-${standardNotes}
-${specialNotes}`;
-    const noteContent = `${weatherSummary}
-${standardNotes}
-${specialNotes}
-${humidityNotes}`;
+    //const noteContent = `Weather Report for ${noteDate}:\n${weatherSummary}\n${standardNotes}\n${specialNotes}`;
+    const noteContent = `${weatherSummary}\n${standardNotes}\n${specialNotes}\n${humidityNotes}`;
 
     // Fetch all user IDs
     const usersToRemind = getAllUserIDs();  // Fetch all user IDs from the game
@@ -2265,88 +2256,4 @@ ${humidityNotes}`;
             console.error("Error adding weather report to Simple Calendar:", error);
         }
     }
-}
-
-async function scheduleContinuationNote(weatherEffect) {
-    // Check if Simple Calendar integration is enabled
-    if (!GlobalWeatherConfig.useSimpleCalendar) {
-        console.log("Simple Calendar integration is disabled. Skipping scheduleContinuationNote.");
-        return; // Exit the function if Simple Calendar is not being used
-    }
-    const currentDate = SimpleCalendar.api.currentDateTime();
-    const tomorrow = new Date(currentDate.year, currentDate.month - 1, currentDate.day + 1); // Adjust month for zero-based index
-    const noteDate = {
-        year: tomorrow.getFullYear(),
-        month: tomorrow.getMonth() + 1, // Convert back to one-based index for Simple Calendar
-        day: tomorrow.getDate(),
-        hour: 0,
-        minute: 0,
-        seconds: 0
-    };
-    const endDate = { ...noteDate, hour: 23, minute: 59, seconds: 59 };
-
-    const noteContent = `Weather continuation: Please roll for weather type "${weatherEffect.type}" for today.`;
-    try {
-        const newJournal = await SimpleCalendar.api.addNote(
-            "Weather Continuation",
-            noteContent,
-            noteDate,
-            endDate,
-            true, // allDay
-            SimpleCalendar.api.NoteRepeat.Never,
-            ['Weather Continuation'], // Category
-            "active", // calendarId: use the active calendar
-            null, // no macro associated
-            ['default'], // visible to all users
-            getAllUserIDs() // users to remind
-        );
-        console.log(newJournal ? "Continuation weather report added to Simple Calendar." : "Failed to add continuation weather report.");
-    } catch (error) {
-        console.error("Error adding continuation weather report to Simple Calendar:", error);
-    }
-}
-
-function resetWeatherEventDetails() {
-    console.log("resetWeatherEvents called");
-    
-    // Reset terrain
-    GlobalWeatherConfig.flags.onLand = false;
-    GlobalWeatherConfig.flags.atSea = false;
-    GlobalWeatherConfig.flags.inAir = false;
-    GlobalWeatherConfig.flags.inBattle = false;
-    console.log("reset onLand flag = ", GlobalWeatherConfig.flags.onLand)
-    console.log("reset atSea flag = ", GlobalWeatherConfig.flags.atSea)
-    
-    // Resetting event-specific details
-    GlobalWeatherConfig.initialWeatherEvent = "none";
-    GlobalWeatherConfig.initialWeatherEventDuration = 0;
-    GlobalWeatherConfig.continuingWeatherEvent = "none";
-    GlobalWeatherConfig.continuingWeatherEventDuration = 0;
-	
-	// Reset special weather event
-	GlobalWeatherConfig.specialWeather = false;
-	GlobalWeatherConfig.specialWeatherEvent = "none";
-	GlobalWeatherConfig.specialWeatherEventDuration = 0;
-
-    // Resetting precipitation details
-    GlobalWeatherConfig.precipType = "none";
-    GlobalWeatherConfig.precipAmount = 0;
-
-    // Resetting temperature specifics
-    GlobalWeatherConfig.dailyHighTemp = 0;
-    GlobalWeatherConfig.dailyLowTemp = 0;
-    GlobalWeatherConfig.temperature.effective = undefined;  // Reset effective temperature if used
-
-    // Resetting wind details
-    GlobalWeatherConfig.windSpeed = 0;
-    GlobalWeatherConfig.windSpeedInitial = 0; // Ensure the initial wind speed is reset as well
-
-    // Additional resets if necessary
-    GlobalWeatherConfig.humidity = 0; // Reset humidity to a default or recalculated value
-    GlobalWeatherConfig.skyCondition = "clear"; // Reset sky condition to a default state
-
-    //GlobalWeatherConfig.flags.precipContinues = false;
-
-    // Log the reset to ensure it's traceable
-    console.log("Weather event details and related configurations have been reset.");
 }
