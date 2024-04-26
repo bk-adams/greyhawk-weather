@@ -1,5 +1,5 @@
 console.log("D&D WEATHER MODULE LOADED!!", "font-weight: bold; color: red; font-size: 16px");
-console.log("version 1.06: added prevailing wind function");
+console.log("version 1.0.6: added prevailing wind function");
 /*
 SimpleCalendar.api.getCurrentYear();
 SimpleCalendar.api.getCurrentMonth();

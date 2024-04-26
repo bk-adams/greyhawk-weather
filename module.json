@@ -1,0 +1,12 @@
+{
+  "id": "greyhawk-weather",
+  "title": "AD&D Greyhawk Weather",
+  "version": "1.0.6",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "11"
+  },
+  "scripts": [
+        "scripts/greyhawk-weather.js"
+    ]
+}
